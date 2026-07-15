@@ -1,4 +1,5 @@
-import { useRef, useState, type FC } from 'react'
+import { useState, type FC } from 'react'
+import { VegaInputNumeric } from '@globalpayments/vega-react'
 import StatusBar from '../components/StatusBar'
 
 interface Props {
@@ -14,24 +15,27 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
   const [rollUpModifiers, setRollUpModifiers] = useState(true)
   const [topMargin, setTopMargin] = useState('1')
   const [bottomMargin, setBottomMargin] = useState('1')
-  const hasMarkedDirtyRef = useRef(false)
-
-  const markDirtyOnce = () => {
-    if (hasMarkedDirtyRef.current) return
-    hasMarkedDirtyRef.current = true
-    onDirty()
-  }
 
   const handleMarginInput = (
     currentValue: string,
     setValue: (value: string) => void,
-    nextRawValue: string,
+    event: Event,
   ) => {
-    const digitsOnly = nextRawValue.replace(/\D/g, '').slice(0, 3)
-    if (digitsOnly === currentValue) return
+    const nextValue = (event as CustomEvent<number>).detail
 
-    setValue(digitsOnly)
-    markDirtyOnce()
+    if (Number.isNaN(nextValue)) {
+      if (currentValue !== '') {
+        setValue('')
+        onDirty()
+      }
+      return
+    }
+
+    const normalized = String(nextValue)
+    if (normalized !== currentValue) {
+      setValue(normalized)
+      onDirty()
+    }
   }
 
   return (
@@ -50,7 +54,7 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
         style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '10px 16px',
+          padding: '16px 16px',
           borderBottom: '1px solid #e5e5ea',
           flexShrink: 0,
           background: 'white',
@@ -199,20 +203,28 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
         )}
 
         {/* Top Margin */}
-        <NumericLinesField
+        <VegaInputNumeric
           label="Top Margin"
           value={topMargin}
-          onChange={(nextValue) => {
-            handleMarginInput(topMargin, setTopMargin, nextValue)
+          integerOnly={true}
+          suffixText="lines"
+          showClearIcon={false}
+          style={{ marginBottom: 16 }}
+          onVegaChange={(event: Event) => {
+            handleMarginInput(topMargin, setTopMargin, event)
           }}
         />
 
         {/* Bottom Margin */}
-        <NumericLinesField
+        <VegaInputNumeric
           label="Bottom Margin"
           value={bottomMargin}
-          onChange={(nextValue) => {
-            handleMarginInput(bottomMargin, setBottomMargin, nextValue)
+          integerOnly={true}
+          suffixText="lines"
+          showClearIcon={false}
+          style={{ marginBottom: 16 }}
+          onVegaChange={(event: Event) => {
+            handleMarginInput(bottomMargin, setBottomMargin, event)
           }}
         />
 
@@ -223,7 +235,7 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
           checked={hideSeparator}
           onChange={() => {
             setHideSeparator((v) => !v)
-            markDirtyOnce()
+            onDirty()
           }}
         />
         <CheckboxField
@@ -244,7 +256,7 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
           checked={rollUpModifiers}
           onChange={() => {
             setRollUpModifiers((v) => !v)
-            markDirtyOnce()
+            onDirty()
           }}
         />
         <CheckboxField
@@ -297,51 +309,6 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onD
   )
 }
 
-function NumericLinesField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (nextValue: string) => void
-}) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <FieldLabel label={label} />
-      <div
-        style={{
-          ...inputStyle,
-          marginBottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="0"
-          style={{
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            flex: 1,
-            minWidth: 0,
-            fontSize: 16,
-            color: '#04041C',
-            fontFamily: 'inherit',
-          }}
-        />
-        <span style={{ color: '#6B747D', fontSize: 14 }}>lines</span>
-      </div>
-    </div>
-  )
-}
-
 /* ── Shared sub-components ───────────────────────────────────────── */
 
 const inputStyle: React.CSSProperties = {
@@ -361,10 +328,10 @@ function FieldLabel({ label }: { label: string }) {
   return (
     <div
       style={{
-        fontSize: 14,
-        color: '#6B747D',
+        fontSize: 16,
+        color: '#04041C',
         fontWeight: 500,
-        marginBottom: 6,
+        marginBottom: 8,
       }}
     >
       {label}
