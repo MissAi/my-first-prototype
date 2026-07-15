@@ -59,7 +59,7 @@ const LogoImagePicker: FC<Props> = ({ onBack, onConfirm }) => {
           display: 'grid',
           gridTemplateColumns: '83px 1fr 83px',
           alignItems: 'center',
-          padding: '12px 16px',
+          padding: '16px 16px',
           columnGap: 8,
           background: '#FCFCFC',
           borderBottom: '1px solid #C7D9E5',
