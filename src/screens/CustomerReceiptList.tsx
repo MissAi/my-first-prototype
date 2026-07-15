@@ -4,6 +4,7 @@ import StatusBar from '../components/StatusBar'
 interface Props {
   saveAllEnabled: boolean
   showAuditTrail: boolean
+  showSaveSuccessToast: boolean
   onSaveAll: () => void
   onOpenAuditTrail: () => void
   onDiscardChanges: () => void
@@ -22,10 +23,12 @@ const ITEMS = [
 ]
 
 const ICON_VERSION = '20260715-1710'
+const ICON_BASE = `${import.meta.env.BASE_URL}icons/`
 
 const CustomerReceiptList: FC<Props> = ({
   saveAllEnabled,
   showAuditTrail,
+  showSaveSuccessToast,
   onSaveAll,
   onOpenAuditTrail,
   onDiscardChanges,
@@ -37,15 +40,16 @@ const CustomerReceiptList: FC<Props> = ({
 }) => {
   const [showActionMenu, setShowActionMenu] = useState(false)
   const actionMenuRef = useRef<HTMLDivElement | null>(null)
+  const actionMenuButtonRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     if (!showActionMenu) return
 
     const handleMouseDown = (event: MouseEvent) => {
-      if (!actionMenuRef.current) return
-      if (!actionMenuRef.current.contains(event.target as Node)) {
-        setShowActionMenu(false)
-      }
+      const target = event.target as Node
+      const clickedInsideMenu = actionMenuRef.current?.contains(target) ?? false
+      const clickedDotsButton = actionMenuButtonRef.current?.contains(target) ?? false
+      if (!clickedInsideMenu && !clickedDotsButton) setShowActionMenu(false)
     }
 
     document.addEventListener('mousedown', handleMouseDown)
@@ -68,6 +72,7 @@ const CustomerReceiptList: FC<Props> = ({
         background: '#f2f2f7',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
       }}
     >
       <StatusBar />
@@ -120,8 +125,13 @@ const CustomerReceiptList: FC<Props> = ({
         {/* Utility icons */}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <img
-            src="/icons/Publish.svg"
+            src={`${ICON_BASE}Publish.svg`}
             alt="Publish"
+            style={{ width: 44, height: 44, objectFit: 'contain' }}
+          />
+          <img
+            src={`${ICON_BASE}info.svg`}
+            alt="Info"
             style={{ width: 44, height: 44, objectFit: 'contain' }}
           />
         </div>
@@ -142,8 +152,9 @@ const CustomerReceiptList: FC<Props> = ({
         <span style={{ fontWeight: 700, fontSize: 18, color: '#04041C' }}>
           Customer Receipt
         </span>
-        <div ref={actionMenuRef} style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
           <button
+            ref={actionMenuButtonRef}
             type="button"
             aria-label="Open receipt actions"
             onClick={() => setShowActionMenu((prev) => !prev)}
@@ -164,6 +175,7 @@ const CustomerReceiptList: FC<Props> = ({
 
           {showActionMenu && (
             <div
+              ref={actionMenuRef}
               style={{
                 position: 'absolute',
                 top: 'calc(100% + 8px)',
@@ -201,7 +213,7 @@ const CustomerReceiptList: FC<Props> = ({
                 }}
               >
                 <img
-                  src={`/icons/discard%20changes.svg?v=${ICON_VERSION}`}
+                  src={`${ICON_BASE}discard-changes.svg?v=${ICON_VERSION}`}
                   alt="Discard changes"
                   style={{ width: 16, height: 16, objectFit: 'contain', opacity: saveAllEnabled ? 1 : 0.5 }}
                 />
@@ -218,7 +230,6 @@ const CustomerReceiptList: FC<Props> = ({
                   style={{
                     width: '100%',
                     border: 'none',
-                    borderTop: '1px solid #ABC6D8',
                     background: '#FCFCFC',
                     display: 'flex',
                     alignItems: 'center',
@@ -233,7 +244,7 @@ const CustomerReceiptList: FC<Props> = ({
                   }}
                 >
                   <img
-                    src={`/icons/audit%20trail.svg?v=${ICON_VERSION}`}
+                    src={`${ICON_BASE}audit-trail.svg?v=${ICON_VERSION}`}
                     alt="Audit trail"
                     style={{ width: 16, height: 16, objectFit: 'contain' }}
                   />
@@ -245,6 +256,7 @@ const CustomerReceiptList: FC<Props> = ({
 
           <button
             type="button"
+            disabled={!saveAllEnabled}
             onClick={() => {
               if (!saveAllEnabled) return
               onSaveAll()
@@ -307,6 +319,63 @@ const CustomerReceiptList: FC<Props> = ({
           </div>
         ))}
       </div>
+
+      {showSaveSuccessToast && (
+        <div
+          className="save-success-toast"
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            left: 16,
+            right: 16,
+            bottom: 34,
+            background: '#8CD79A',
+            borderRadius: 16,
+            minHeight: 84,
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            color: '#0A1931',
+            boxShadow: '0 10px 28px rgba(10, 25, 49, 0.12)',
+            pointerEvents: 'none',
+            zIndex: 40,
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 999,
+              background: '#0A1931',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M2.2 6.2 4.7 8.7 9.8 3.6"
+                stroke="#8CD79A"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <span
+            style={{
+              fontSize: 16,
+              lineHeight: 1,
+              fontWeight: 500,
+            }}
+          >
+            Changes saved.
+          </span>
+        </div>
+      )}
     </div>
   )
 }

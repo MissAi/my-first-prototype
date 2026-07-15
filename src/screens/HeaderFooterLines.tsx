@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react'
+import { useEffect, useRef, useState, type FC } from 'react'
 import { VegaInput, VegaInputSelect } from '@globalpayments/vega-react'
 import StatusBar from '../components/StatusBar'
 
@@ -24,6 +24,7 @@ const DEFAULT_FOOTER: Line = {
 
 interface Props {
   onBack: () => void
+  onDirty: () => void
 }
 
 type Section = 'header' | 'footer'
@@ -41,6 +42,7 @@ const FONT_OPTIONS = [
   'Menlo-Bold',
   'Menlo-Regular',
 ]
+const ICON_BASE = `${import.meta.env.BASE_URL}icons/`
 
 type VegaSelectSourceItem = {
   id: string
@@ -69,7 +71,7 @@ function getVegaSelectValue(event: Event): string | null {
   return null
 }
 
-const HeaderFooterLines: FC<Props> = ({ onBack }) => {
+const HeaderFooterLines: FC<Props> = ({ onBack, onDirty }) => {
   const [headerLines, setHeaderLines] = useState<Line[]>([DEFAULT_HEADER])
   const [footerLines, setFooterLines] = useState<Line[]>([DEFAULT_FOOTER])
   const [editor, setEditor] = useState<EditorState | null>(null)
@@ -125,6 +127,8 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
       setFooterLines((prev) => applyUpdate(prev))
     }
 
+    onDirty()
+
     resetEditor()
   }
 
@@ -135,9 +139,11 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
   function handleDelete(section: Section, index: number) {
     if (section === 'header') {
       setHeaderLines((prev) => prev.filter((_, i) => i !== index))
+      onDirty()
       return
     }
     setFooterLines((prev) => prev.filter((_, i) => i !== index))
+    onDirty()
   }
 
   return (
@@ -217,6 +223,7 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
                 text={draftText}
                 onTextChange={setDraftText}
                 font={draftFont}
+                onFontChange={setDraftFont}
                 size={draftSize}
                 alignment={draftAlignment}
                 onSizeChange={setDraftSize}
@@ -241,6 +248,7 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
             text={draftText}
             onTextChange={setDraftText}
             font={draftFont}
+            onFontChange={setDraftFont}
             size={draftSize}
             alignment={draftAlignment}
               onSizeChange={setDraftSize}
@@ -266,6 +274,7 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
                 text={draftText}
                 onTextChange={setDraftText}
                 font={draftFont}
+                onFontChange={setDraftFont}
                 size={draftSize}
                 alignment={draftAlignment}
                 onSizeChange={setDraftSize}
@@ -289,6 +298,7 @@ const HeaderFooterLines: FC<Props> = ({ onBack }) => {
             text={draftText}
             onTextChange={setDraftText}
             font={draftFont}
+            onFontChange={setDraftFont}
             size={draftSize}
             alignment={draftAlignment}
               onSizeChange={setDraftSize}
@@ -467,8 +477,8 @@ function LineViewCard({
             onClick={onEdit}
             style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
           >
-            <img
-              src="/icons/edit.svg"
+              <img
+                src={`${ICON_BASE}edit.svg`}
               alt="Edit"
               style={{ width: 32, height: 32, objectFit: 'contain' }}
             />
@@ -511,6 +521,7 @@ function EditCard({
   text,
   onTextChange,
   font,
+  onFontChange,
   size,
   alignment,
   onSizeChange,
@@ -522,6 +533,7 @@ function EditCard({
   text: string
   onTextChange: (v: string) => void
   font: string
+  onFontChange: (font: string) => void
   size: number
   alignment: Line['alignment']
   onSizeChange: (size: number) => void
@@ -530,39 +542,49 @@ function EditCard({
   onDone: () => void
   onCancel: () => void
 }) {
+  const textInputRef = useRef<HTMLVegaInputElement | null>(null)
+
+  useEffect(() => {
+    void textInputRef.current?.doFocus?.()
+  }, [])
+
   return (
     <div
       style={{
         background: '#f5f7f7',
         borderRadius: 10,
-        padding: '14px 16px',
+        padding: '14px 12px',
         marginBottom: 10,
       }}
     >
       {/* Text row */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <VegaInput
+              ref={textInputRef}
               label="Text"
               value={text}
+              showClearIcon={false}
               onVegaChange={(event: Event) => {
                 onTextChange((event as CustomEvent<string>).detail ?? '')
               }}
             />
           </div>
-          {hasDone ? (
-            <button
-              onClick={onDone}
-              style={actionBtnStyle('#262AFF')}
-            >
-              Done
-            </button>
-          ) : (
-            <button onClick={onCancel} style={actionBtnStyle('#262AFF')}>
-              Cancel
-            </button>
-          )}
+          <div style={{ height: 48, display: 'flex', alignItems: 'center' }}>
+            {hasDone ? (
+              <button
+                onClick={onDone}
+                style={actionBtnStyle('#262AFF')}
+              >
+                Done
+              </button>
+            ) : (
+              <button onClick={onCancel} style={actionBtnStyle('#262AFF')}>
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -576,7 +598,7 @@ function EditCard({
           vegaDropdownProps={{ searchable: false }}
           onVegaChange={(event: Event) => {
             const next = getVegaSelectValue(event)
-            if (next) onTextChange(text)
+            if (next) onFontChange(next)
           }}
         />
       </div>

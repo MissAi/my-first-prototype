@@ -4,6 +4,7 @@ import StatusBar from '../components/StatusBar'
 
 interface Props {
   onBack: () => void
+  onDirty: () => void
 }
 
 type VegaSelectSourceItem = {
@@ -66,7 +67,7 @@ function getVegaSelectValue(event: Event): string | null {
   return null
 }
 
-const BodySettings: FC<Props> = ({ onBack }) => {
+const BodySettings: FC<Props> = ({ onBack, onDirty }) => {
   const [fontBody, setFontBody] = useState(
     'Menlo-Bold (iOS)/ RobotoMono-Bold (Android)',
   )
@@ -145,7 +146,10 @@ const BodySettings: FC<Props> = ({ onBack }) => {
             vegaDropdownProps={{ searchable: true }}
             onVegaChange={(event: Event) => {
               const next = getVegaSelectValue(event)
-              if (next) setFontBody(next)
+              if (next && next !== fontBody) {
+                setFontBody(next)
+                onDirty()
+              }
             }}
           />
 
@@ -157,7 +161,10 @@ const BodySettings: FC<Props> = ({ onBack }) => {
             vegaDropdownProps={{ searchable: false }}
             onVegaChange={(event: Event) => {
               const next = getVegaSelectValue(event)
-              if (next) setSize(next)
+              if (next && next !== size) {
+                setSize(next)
+                onDirty()
+              }
             }}
           />
         </div>

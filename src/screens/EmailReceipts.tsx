@@ -4,9 +4,10 @@ import StatusBar from '../components/StatusBar'
 
 interface Props {
   onBack: () => void
+  onDirty: () => void
 }
 
-const EmailReceipts: FC<Props> = ({ onBack }) => {
+const EmailReceipts: FC<Props> = ({ onBack, onDirty }) => {
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBodyText, setEmailBodyText] = useState('')
 
@@ -86,7 +87,11 @@ const EmailReceipts: FC<Props> = ({ onBack }) => {
               alignment: 'center',
             }}
             onVegaChange={(event: Event) => {
-              setEmailSubject((event as CustomEvent<string>).detail ?? '')
+              const next = (event as CustomEvent<string>).detail ?? ''
+              if (next !== emailSubject) {
+                setEmailSubject(next)
+                onDirty()
+              }
             }}
           />
 
@@ -95,7 +100,11 @@ const EmailReceipts: FC<Props> = ({ onBack }) => {
             value={emailBodyText}
             rows={6}
             onVegaChange={(event: Event) => {
-              setEmailBodyText((event as CustomEvent<string>).detail ?? '')
+              const next = (event as CustomEvent<string>).detail ?? ''
+              if (next !== emailBodyText) {
+                setEmailBodyText(next)
+                onDirty()
+              }
             }}
           />
         </div>

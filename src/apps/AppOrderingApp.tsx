@@ -14,6 +14,7 @@ export default function AppOrderingApp() {
       {screen === 'left-nav' && (
         <LeftNav
           onSelectCustomerReceipt={() => setScreen('intro')}
+          onClose={() => setScreen('intro')}
         />
       )}
       {screen === 'intro' && (

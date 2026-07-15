@@ -5,24 +5,37 @@ import StatusBar from '../components/StatusBar'
 interface Props {
   onBack: () => void
   onOpenLogoPicker: () => void
+  onResetLogo: () => void
+  onDirty: () => void
   logoUrl: string | null
 }
 
-const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
+const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, onResetLogo, onDirty, logoUrl }) => {
   const [hideSeparator, setHideSeparator] = useState(true)
   const [rollUpModifiers, setRollUpModifiers] = useState(true)
   const [topMargin, setTopMargin] = useState('1')
   const [bottomMargin, setBottomMargin] = useState('1')
 
-  const handleMarginInput = (setValue: (value: string) => void, event: Event) => {
+  const handleMarginInput = (
+    currentValue: string,
+    setValue: (value: string) => void,
+    event: Event,
+  ) => {
     const nextValue = (event as CustomEvent<number>).detail
 
     if (Number.isNaN(nextValue)) {
-      setValue('')
+      if (currentValue !== '') {
+        setValue('')
+        onDirty()
+      }
       return
     }
 
-    setValue(String(nextValue))
+    const normalized = String(nextValue)
+    if (normalized !== currentValue) {
+      setValue(normalized)
+      onDirty()
+    }
   }
 
   return (
@@ -142,6 +155,53 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
           )}
         </div>
 
+        {logoUrl && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              marginTop: -8,
+              marginBottom: 20,
+            }}
+          >
+            <button
+              type="button"
+              onClick={onResetLogo}
+              style={{
+                border: 'none',
+                background: 'none',
+                padding: 0,
+                color: '#262AFF',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Reset to Default
+            </button>
+            <span style={{ color: '#ABC6D8', fontSize: 14, fontWeight: 600 }}>|</span>
+            <button
+              type="button"
+              onClick={onOpenLogoPicker}
+              style={{
+                border: 'none',
+                background: 'none',
+                padding: 0,
+                color: '#262AFF',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Change Logo
+            </button>
+          </div>
+        )}
+
         {/* Top Margin */}
         <VegaInputNumeric
           label="Top Margin"
@@ -150,7 +210,7 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
           suffixText="lines"
           showClearIcon={false}
           onVegaChange={(event: Event) => {
-            handleMarginInput(setTopMargin, event)
+            handleMarginInput(topMargin, setTopMargin, event)
           }}
         />
 
@@ -162,7 +222,7 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
           suffixText="lines"
           showClearIcon={false}
           onVegaChange={(event: Event) => {
-            handleMarginInput(setBottomMargin, event)
+            handleMarginInput(bottomMargin, setBottomMargin, event)
           }}
         />
 
@@ -171,7 +231,10 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
           label="Hide Separator Lines"
           description="If selected, the separator lines on these receipts will not be shown"
           checked={hideSeparator}
-          onChange={() => setHideSeparator((v) => !v)}
+          onChange={() => {
+            setHideSeparator((v) => !v)
+            onDirty()
+          }}
         />
         <CheckboxField
           label="Show Promised Time"
@@ -189,7 +252,10 @@ const DisplaySettings: FC<Props> = ({ onBack, onOpenLogoPicker, logoUrl }) => {
           label="Roll Up Modifiers Prices"
           description="Item prices will include the prices of their added modifiers."
           checked={rollUpModifiers}
-          onChange={() => setRollUpModifiers((v) => !v)}
+          onChange={() => {
+            setRollUpModifiers((v) => !v)
+            onDirty()
+          }}
         />
         <CheckboxField
           label="Roll Up Duplicates"
