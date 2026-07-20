@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type FC } from 'react'
 import {
   VegaButton,
+  VegaImageUploader,
   VegaInput,
   VegaInputNumeric,
   VegaInputSelect,
   VegaTextarea,
+  VegaTooltip,
 } from '@globalpayments/vega-react'
 import './ResponsiveButtonsDemo.css'
 
@@ -379,12 +381,33 @@ function ToggleField({
   onToggle: () => void
 }) {
   return (
-    <div className="rbd-toggle">
-      <span className="rbd-toggle__label">{label}</span>
-      <label className="rbd-toggle__box">
-        <input type="checkbox" checked={checked} onChange={onToggle} />
-        <span>{description}</span>
-      </label>
+    <div className="rbd-checkbox-field">
+      <span className="rbd-checkbox-field__label">{label}</span>
+      <button
+        type="button"
+        className="rbd-checkbox-field__control"
+        role="checkbox"
+        aria-checked={checked}
+        onClick={onToggle}
+      >
+        <span
+          className={`rbd-checkbox-field__box${checked ? ' is-checked' : ''}`}
+          aria-hidden="true"
+        >
+          {checked && (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M2 6l3 3 5-5"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </span>
+        <span className="rbd-checkbox-field__description">{description}</span>
+      </button>
     </div>
   )
 }
@@ -401,6 +424,26 @@ const ResponsiveButtonsDemo: FC = () => {
   const [alcohol, setAlcohol] = useState(false)
   const [measurement, setMeasurement] = useState(false)
   const [preventDiscounts, setPreventDiscounts] = useState(false)
+  const photoStackRef = useRef<HTMLDivElement>(null)
+  const [photoSize, setPhotoSize] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!photoStackRef.current) return
+
+    function syncPhotoSize() {
+      const target = photoStackRef.current
+      if (!target) return
+      const next = Math.round(target.getBoundingClientRect().height)
+      setPhotoSize((prev) => (prev === next ? prev : next))
+    }
+
+    syncPhotoSize()
+
+    const observer = new ResizeObserver(() => syncPhotoSize())
+    observer.observe(photoStackRef.current)
+
+    return () => observer.disconnect()
+  }, [])
 
   function handleAction(key: string) {
     // Placeholder action for prototype toolbar interaction.
@@ -473,13 +516,17 @@ const ResponsiveButtonsDemo: FC = () => {
                   <ActionsDropdown onSelect={handleAction} />
                 </div>
                 <div className="rbd-actions__icons">
-                  <ToolbarIconButton action={DELETE_ACTION} onSelect={handleAction} />
+                  <VegaTooltip text={DELETE_ACTION.label} trigger="hover" placement="top">
+                    <ToolbarIconButton action={DELETE_ACTION} onSelect={handleAction} />
+                  </VegaTooltip>
                   <span className="rbd-actions__icon-divider" aria-hidden="true" />
                   <div className="rbd-actions__icon-stack" aria-label="Toolbar icon actions">
                     {TOOLBAR_ACTIONS.map((action, index) => (
                       <div className="rbd-actions__icon-item" key={action.key}>
                         {index > 0 && <span className="rbd-actions__icon-divider" aria-hidden="true" />}
-                        <ToolbarIconButton action={action} onSelect={handleAction} />
+                        <VegaTooltip text={action.label} trigger="hover" placement="top">
+                          <ToolbarIconButton action={action} onSelect={handleAction} />
+                        </VegaTooltip>
                       </div>
                     ))}
                   </div>
@@ -507,11 +554,20 @@ const ResponsiveButtonsDemo: FC = () => {
           <div className="rbd-surface">
             <div className="rbd-form">
               <div className="rbd-row rbd-row--photo">
-                <div className="rbd-photo-placeholder">
-                  <Icon name="image" size={22} />
-                  <span>Photo</span>
+                  <div
+                    className="rbd-photo-uploader"
+                    style={photoSize ? { width: `${photoSize}px`, height: `${photoSize}px` } : undefined}
+                  >
+                    <VegaImageUploader
+                      className="rbd-photo-uploader__field"
+                      actionTitle="Set Black & White Logo"
+                      actionSubTitle="Only *.jpg, *.jpeg, *.png, *.gif"
+                      accept=".jpg,.jpeg,.png,.gif"
+                      width={photoSize ?? undefined}
+                      height={photoSize ?? undefined}
+                    />
                 </div>
-                <div className="rbd-row--stack">
+                  <div className="rbd-row--stack" ref={photoStackRef}>
                   <VegaInput
                     label="Name"
                     required
